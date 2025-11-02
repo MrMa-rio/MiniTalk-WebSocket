@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cliente WebSocket Simples</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #messages { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll; margin-bottom: 10px; }
+        .message { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<h1>Cliente WebSocket Simples (STOMP)</h1>
+
+<div id="messages"></div>
+
+<input type="text" id="messageInput" placeholder="Digite sua mensagem...">
+<button onclick="sendMessage()">Enviar</button>
+<button onclick="connect()">Conectar</button>
+<button onclick="disconnect()">Desconectar</button>
+
+<script>
+    var stompClient = null;
+
+    function connect() {
+        var socket = new SockJS('/ws-chat');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Conectado: ' + frame);
+            showMessage("Conectado ao servidor.");
+
+            // Assinar o tópico para receber mensagens do servidor
+            stompClient.subscribe('/topic/messages', function (message) {
+                showMessage(message.body);
+            });
+        }, function(error) {
+            showMessage("Erro de conexão: " + error);
+            console.error("Erro de conexão:", error);
+        });
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+        showMessage("Desconectado.");
+        console.log("Desconectado");
+    }
+
+    function sendMessage() {
+        var message = document.getElementById('messageInput').value;
+        if (stompClient && stompClient.connected) {
+            // Enviar mensagem para o endpoint /app/message
+            stompClient.send("/app/message", {}, message);
+            showMessage("Voce: " + message);
+            document.getElementById('messageInput').value = ''; // Limpar input
+        } else {
+            showMessage("Erro: Não conectado. Clique em 'Conectar'.");
+        }
+    }
+
+    function showMessage(message) {
+        var messagesDiv = document.getElementById('messages');
+        var messageElement = document.createElement('div');
+        messageElement.className = 'message';
+        messageElement.textContent = message;
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll para o final
+    }
+
+    // Conectar automaticamente ao carregar a página
+    window.onload = connect;
+</script>
+
+</body>
+</html>
