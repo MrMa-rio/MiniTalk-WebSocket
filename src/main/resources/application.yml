@@ -1,0 +1,11 @@
+server:
+  port: 8085
+spring:
+  application:
+    name: MiniTalk-Websocket
+
+
+springdoc:
+  swagger-ui:
+    path: /docs
+
