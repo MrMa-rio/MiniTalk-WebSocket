@@ -1,6 +1,8 @@
 package com.marsn.minitalkwebsocket.adapter.services.consumers;
 
 
+import com.marsn.minitalkwebsocket.core.model.rabbit.QueueKey;
+import com.marsn.minitalkwebsocket.core.model.rabbit.RoutingKey;
 import com.marsn.minitalkwebsocket.v1.ChatMessage;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
@@ -24,23 +26,20 @@ public class ProcessConsumer {
     /**
      * Cria dinamicamente uma fila temporária e faz o bind na conversa desejada.
      */
-    public void subscribeToConversation(String userId, String conversationId) {
-        String queueName = "process.queue." + userId;
-        TopicExchange exchange = new TopicExchange("process.exchange");
+    public void subscribeToQueue(QueueKey queueName, TopicExchange exchange, RoutingKey routingKey) {
 
         // Cria fila se não existir
-        Queue queue = new Queue(queueName, false, true, true);
+        Queue queue = new Queue(queueName.toName(), false, true, true);
         rabbitAdmin.declareQueue(queue);
 
         // Faz o bind da fila à routing key específica
-        String routingKey = "process.chat." + conversationId;
-        rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(routingKey));
+        rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(routingKey.toRoute()));
 
         // Inicia listener para a fila
-        startListener(queueName);
+//        startListener(queueName);
     }
 
-    private void startListener(String queueName) {
+    private void startListener(String queueName) { //TODO: Tornar esse metodo public pois ele sera utilizado para ouvir as filas
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         container.setQueueNames(queueName);

@@ -55,7 +55,7 @@ public class WebSocketController {
     public void enterChat(EnterChatDTO enterChatDTO) {
 
 
-        processConsumer.subscribeToConversation(enterChatDTO.senderId(), enterChatDTO.conversationId());
+        processConsumer.subscribeToQueue(enterChatDTO.senderId(), enterChatDTO.conversationId());
 
         System.out.println("O USUARIO: " + enterChatDTO.senderId() + " se conectou na conversa " + enterChatDTO.conversationId());
 
