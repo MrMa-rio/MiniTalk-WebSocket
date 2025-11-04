@@ -5,9 +5,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        #messages { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll; margin-bottom: 10px; }
-        .message { margin-bottom: 5px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #messages {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 200px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+        }
+
+        .message {
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -17,9 +30,16 @@
 <div id="messages"></div>
 
 <input type="text" id="messageInput" placeholder="Digite sua mensagem...">
+<input type="text" id="messageIdInput" placeholder="Digite o id da mensagem">
+<input type="text" id="senderId" placeholder="usuario remetente">
+<input type="text" id="Remetente" placeholder="usuario destino">
+<input type="text" id="data-hora" placeholder="hora">
 <button onclick="sendMessage()">Enviar</button>
 <button onclick="connect()">Conectar</button>
 <button onclick="disconnect()">Desconectar</button>
+
+<input type="text" id="conversationId" placeholder="id da conversa">
+<button onclick="connectInConversation()">Conectar no chat</button>
 
 <script>
     var stompClient = null;
@@ -35,10 +55,29 @@
             stompClient.subscribe('/topic/messages', function (message) {
                 showMessage(message.body);
             });
-        }, function(error) {
+        }, function (error) {
             showMessage("Erro de conexão: " + error);
             console.error("Erro de conexão:", error);
         });
+    }
+
+    function connectInConversation() {
+
+
+        var messageId = document.getElementById('conversationId').value;
+        var senderId = document.getElementById('senderId').value;
+
+        if (stompClient && stompClient.connected) {
+            // Enviar mensagem para o endpoint /app/message
+            stompClient.send("/app/enter-chat", {},
+                JSON.stringify({
+                    conversationId: messageId,
+                    senderId: senderId,
+                })
+            );
+        } else {
+            showMessage("Erro: Não conectado. Clique em 'Conectar'.");
+        }
     }
 
     function disconnect() {
@@ -51,9 +90,23 @@
 
     function sendMessage() {
         var message = document.getElementById('messageInput').value;
+        var messageId = document.getElementById('messageIdInput').value;
+        var senderId = document.getElementById('senderId').value;
+        var dataHora = document.getElementById('data-hora').value;
+        var remetente = document.getElementById('Remetente').value;
+
         if (stompClient && stompClient.connected) {
             // Enviar mensagem para o endpoint /app/message
-            stompClient.send("/app/message", {}, message);
+            stompClient.send("/app/message", {},
+                JSON.stringify({
+                    messageId: messageId,
+                    conversationId: messageId,
+                    senderId: senderId,
+                    content: message,
+                    timestamp: dataHora
+
+                })
+            );
             showMessage("Voce: " + message);
             document.getElementById('messageInput').value = ''; // Limpar input
         } else {

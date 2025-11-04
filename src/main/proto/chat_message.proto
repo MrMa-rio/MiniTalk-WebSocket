@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.marsn.minitalkwebsocket.v1";
+option java_outer_classname = "ChatProto";
+
+message ChatMessage {
+  string messageId = 1;
+  string conversationId = 2; // conversa ou sala
+  string senderId = 3;
+  string content = 4;
+  string timestamp = 5;
+}

@@ -1,7 +1,10 @@
 package com.marsn.minitalkwebsocket.entrypoint.websocket.dto;
 
 public record ChatMessageDTO(
-        String sender,
-        String content
+        String messageId,
+        String conversationId,
+        String senderId,
+        String content,
+        String timestamp
 ) {
 }
