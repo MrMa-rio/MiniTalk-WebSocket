@@ -1,8 +1,11 @@
 package com.marsn.minitalkwebsocket.adapter.configuration;
 
+import com.marsn.minitalkwebsocket.core.model.rabbit.Exchanges;
+import com.marsn.minitalkwebsocket.core.model.rabbit.Queues;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.MessageConverter;
@@ -21,18 +24,27 @@ public class RabbitMqConfig {
 
     @Bean
     public Queue processQueue() {
-        return new Queue("process.queue", false); // O segundo argumento é para ser durável
+        return new Queue(Queues.PROCESS_QUEUE.getQueue(), false); // O segundo argumento é para ser durável
     }
 
     @Bean
     public TopicExchange processExchange() {
-        return new TopicExchange("process.exchange");
+        return new TopicExchange(Exchanges.PROCESS_EXCHANGE.getExchange());
     }
+
+    @Bean
+    public TopicExchange deliveryExchange() {
+        return new TopicExchange(Exchanges.DELIVERY_EXCHANGE.getExchange());
+    }
+
 
     @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
         return new RabbitAdmin(connectionFactory);
     }
+
+
+
 
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {

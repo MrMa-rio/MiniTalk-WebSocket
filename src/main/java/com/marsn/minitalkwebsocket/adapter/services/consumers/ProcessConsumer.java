@@ -1,6 +1,7 @@
 package com.marsn.minitalkwebsocket.adapter.services.consumers;
 
 
+import com.marsn.minitalkwebsocket.core.model.rabbit.ExchangeKey;
 import com.marsn.minitalkwebsocket.core.model.rabbit.QueueKey;
 import com.marsn.minitalkwebsocket.core.model.rabbit.RoutingKey;
 import com.marsn.minitalkwebsocket.v1.ChatMessage;
@@ -26,10 +27,11 @@ public class ProcessConsumer {
     /**
      * Cria dinamicamente uma fila temporária e faz o bind na conversa desejada.
      */
-    public void subscribeToQueue(QueueKey queueName, TopicExchange exchange, RoutingKey routingKey) {
+    public void subscribeToQueue(QueueKey queueName, ExchangeKey exchangeKey, RoutingKey routingKey) {
 
         // Cria fila se não existir
         Queue queue = new Queue(queueName.toName(), false, true, true);
+        TopicExchange exchange = new TopicExchange(exchangeKey.toName());
         rabbitAdmin.declareQueue(queue);
 
         // Faz o bind da fila à routing key específica
@@ -39,10 +41,10 @@ public class ProcessConsumer {
 //        startListener(queueName);
     }
 
-    private void startListener(String queueName) { //TODO: Tornar esse metodo public pois ele sera utilizado para ouvir as filas
+    public void startListener(QueueKey queueName) { //TODO: Tornar esse metodo public pois ele sera utilizado para ouvir as filas
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
-        container.setQueueNames(queueName);
+        container.setQueueNames(queueName.toName());
         container.setMessageListener(message -> {
             try {
                 ChatMessage chatMsg = ChatMessage.parseFrom(message.getBody());
