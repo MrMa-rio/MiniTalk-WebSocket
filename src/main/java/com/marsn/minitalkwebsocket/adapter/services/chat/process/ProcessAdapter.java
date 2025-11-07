@@ -34,15 +34,16 @@ public class ProcessAdapter {
                         .setSenderId(message.senderId())
                         .setConversationId(message.conversationId())
                         .setTimestamp(message.timestamp())
+                        .setDestinyId(message.destinyId())
                         .build().toByteArray()
 
         );
     }
 
     public void handleEnterChat(EnterChatDTO enterChatDTO) {
-        ProcessRoutingKey routingKey = new ProcessRoutingKey(enterChatDTO.conversationId());
+        ProcessRoutingKey routingKey = new ProcessRoutingKey(enterChatDTO.senderId());
         ProcessChatQueueKey queueName = new ProcessChatQueueKey(enterChatDTO.senderId());
-        ProcessExchangeKey exchangeKey = new ProcessExchangeKey("process");
+        ProcessExchangeKey exchangeKey = new ProcessExchangeKey(Exchanges.DELIVERY_EXCHANGE);
         processConsumer.subscribeToQueue(
                 queueName,
                 exchangeKey,

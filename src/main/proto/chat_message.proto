@@ -6,8 +6,9 @@ option java_outer_classname = "ChatProto";
 
 message ChatMessage {
   string messageId = 1;
-  string conversationId = 2; // conversa ou sala
+  string conversationId = 2;
   string senderId = 3;
   string content = 4;
   string timestamp = 5;
+  string destinyId = 6;
 }

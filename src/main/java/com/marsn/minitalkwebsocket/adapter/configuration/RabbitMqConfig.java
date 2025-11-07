@@ -2,8 +2,8 @@ package com.marsn.minitalkwebsocket.adapter.configuration;
 
 import com.marsn.minitalkwebsocket.core.model.rabbit.Exchanges;
 import com.marsn.minitalkwebsocket.core.model.rabbit.Queues;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import com.marsn.minitalkwebsocket.core.model.rabbit.Routes;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -24,12 +24,12 @@ public class RabbitMqConfig {
 
     @Bean
     public Queue processQueue() {
-        return new Queue(Queues.PROCESS_QUEUE.getQueue(), false); // O segundo argumento é para ser durável
+        return new Queue(Queues.PROCESS_QUEUE.getQueue(), false);
     }
 
     @Bean
-    public TopicExchange processExchange() {
-        return new TopicExchange(Exchanges.PROCESS_EXCHANGE.getExchange());
+    public DirectExchange processExchange() {
+        return new DirectExchange(Exchanges.PROCESS_EXCHANGE.getExchange());
     }
 
     @Bean
@@ -37,6 +37,13 @@ public class RabbitMqConfig {
         return new TopicExchange(Exchanges.DELIVERY_EXCHANGE.getExchange());
     }
 
+    @Bean
+    public Binding processBinding(Queue processQueue, DirectExchange processExchange) {
+        return BindingBuilder
+                .bind(processQueue)
+                .to(processExchange)
+                .with(Routes.PROCESS_ROUTE.getRoutingKey());
+    }
 
     @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {

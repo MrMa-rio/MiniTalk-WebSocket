@@ -3,7 +3,7 @@ package com.marsn.minitalkwebsocket.core.model.rabbit;
 public enum Routes {
 
 
-    PROCESS_ROUTE("chat.process.message");
+    PROCESS_ROUTE("process.message.route");
 
     private final String routingKey;
 

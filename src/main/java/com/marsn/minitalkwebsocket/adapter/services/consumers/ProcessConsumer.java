@@ -1,6 +1,7 @@
 package com.marsn.minitalkwebsocket.adapter.services.consumers;
 
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.marsn.minitalkwebsocket.core.model.rabbit.ExchangeKey;
 import com.marsn.minitalkwebsocket.core.model.rabbit.QueueKey;
 import com.marsn.minitalkwebsocket.core.model.rabbit.RoutingKey;
@@ -19,7 +20,7 @@ public class ProcessConsumer {
     private final RabbitAdmin rabbitAdmin;
     private final ConnectionFactory connectionFactory;
 
-    public ProcessConsumer( RabbitAdmin rabbitAdmin, ConnectionFactory connectionFactory) {
+    public ProcessConsumer(RabbitAdmin rabbitAdmin, ConnectionFactory connectionFactory) {
         this.rabbitAdmin = rabbitAdmin;
         this.connectionFactory = connectionFactory;
     }
@@ -36,12 +37,9 @@ public class ProcessConsumer {
 
         // Faz o bind da fila à routing key específica
         rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(routingKey.toRoute()));
-
-        // Inicia listener para a fila
-//        startListener(queueName);
     }
 
-    public void startListener(QueueKey queueName) { //TODO: Tornar esse metodo public pois ele sera utilizado para ouvir as filas
+    public void startListener(QueueKey queueName) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         container.setQueueNames(queueName.toName());
@@ -51,9 +49,8 @@ public class ProcessConsumer {
                 System.out.println(queueName);
                 System.out.printf("📩 [%s] Nova mensagem em %s: %s%n",
                         chatMsg.getSenderId(), chatMsg.getConversationId(), chatMsg.getContent());
-
-            } catch (Exception e) {
-                throw new RuntimeException("ERRO AO CONSUMIR AS MENSAGENS DO CHAT");
+            } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
             }
         });
         container.start();

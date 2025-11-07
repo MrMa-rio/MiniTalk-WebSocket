@@ -5,6 +5,7 @@ public record ChatMessageDTO(
         String conversationId,
         String senderId,
         String content,
-        String timestamp
+        String timestamp,
+        String destinyId
 ) {
 }

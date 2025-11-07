@@ -1,10 +1,11 @@
 package com.marsn.minitalkwebsocket.core.model.rabbit.ProcessChat;
 
 import com.marsn.minitalkwebsocket.core.model.rabbit.ExchangeKey;
+import com.marsn.minitalkwebsocket.core.model.rabbit.Exchanges;
 
-public record ProcessExchangeKey(String name) implements ExchangeKey {
+public record ProcessExchangeKey(Exchanges name) implements ExchangeKey {
     @Override
     public String toName() {
-        return name + ".exchange";
+        return name.getExchange();
     }
 }

@@ -34,6 +34,6 @@ public class WebSocketController {
     @MessageMapping("/enter-chat")
     public void enterChat(EnterChatDTO enterChatDTO) {
         adapter.handleEnterChat(enterChatDTO);
-        System.out.println("O USUARIO: " + enterChatDTO.senderId() + " se conectou na conversa " + enterChatDTO.conversationId());
+        System.out.println("O USUARIO: " + enterChatDTO.senderId() + " se conectou ");
     }
 }

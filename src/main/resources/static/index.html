@@ -32,7 +32,7 @@
 <input type="text" id="messageInput" placeholder="Digite sua mensagem...">
 <input type="text" id="messageIdInput" placeholder="Digite o id da mensagem">
 <input type="text" id="senderId" placeholder="usuario remetente">
-<input type="text" id="Remetente" placeholder="usuario destino">
+<input type="text" id="destinyId" placeholder="usuario destino">
 <input type="text" id="data-hora" placeholder="hora">
 <button onclick="sendMessage()">Enviar</button>
 <button onclick="connect()">Conectar</button>
@@ -93,7 +93,7 @@
         var messageId = document.getElementById('messageIdInput').value;
         var senderId = document.getElementById('senderId').value;
         var dataHora = document.getElementById('data-hora').value;
-        var remetente = document.getElementById('Remetente').value;
+        var destinyId = document.getElementById('destinyId').value;
 
         if (stompClient && stompClient.connected) {
             // Enviar mensagem para o endpoint /app/message
@@ -103,7 +103,8 @@
                     conversationId: messageId,
                     senderId: senderId,
                     content: message,
-                    timestamp: dataHora
+                    timestamp: dataHora,
+                    destinyId: destinyId
 
                 })
             );
