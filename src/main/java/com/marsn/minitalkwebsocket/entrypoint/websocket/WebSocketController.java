@@ -1,21 +1,14 @@
 package com.marsn.minitalkwebsocket.entrypoint.websocket;
 
 import com.marsn.minitalkwebsocket.adapter.services.chat.process.ProcessAdapter;
-import com.marsn.minitalkwebsocket.adapter.services.consumers.ProcessConsumer;
-import com.marsn.minitalkwebsocket.core.model.rabbit.ProcessChat.ProcessChatQueueKey;
-import com.marsn.minitalkwebsocket.core.model.rabbit.ProcessChat.ProcessExchangeKey;
-import com.marsn.minitalkwebsocket.core.model.rabbit.ProcessChat.ProcessRoutingKey;
 import com.marsn.minitalkwebsocket.entrypoint.websocket.dto.ChatMessageDTO;
 import com.marsn.minitalkwebsocket.entrypoint.websocket.dto.EnterChatDTO;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
 @Controller
 public class WebSocketController {
-
-
-
 
     private final ProcessAdapter adapter;
 
@@ -32,8 +25,10 @@ public class WebSocketController {
     }
 
     @MessageMapping("/enter-chat")
-    public void enterChat(EnterChatDTO enterChatDTO) {
+    @SendTo("/topic/messages")
+    public String enterChat(EnterChatDTO enterChatDTO) {
         adapter.handleEnterChat(enterChatDTO);
         System.out.println("O USUARIO: " + enterChatDTO.senderId() + " se conectou ");
+        return "O USUARIO: " + enterChatDTO.senderId() + " se conectou ";
     }
 }

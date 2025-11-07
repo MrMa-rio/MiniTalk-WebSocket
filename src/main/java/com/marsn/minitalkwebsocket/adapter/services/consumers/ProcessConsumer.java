@@ -49,6 +49,8 @@ public class ProcessConsumer {
                 System.out.println(queueName);
                 System.out.printf("📩 [%s] Nova mensagem em %s: %s%n",
                         chatMsg.getSenderId(), chatMsg.getConversationId(), chatMsg.getContent());
+
+//                sendMessage(chatMsg.getContent());
             } catch (InvalidProtocolBufferException e) {
                 throw new RuntimeException(e);
             }
