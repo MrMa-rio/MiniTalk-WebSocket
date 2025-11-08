@@ -17,10 +17,11 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final SessionRegistry sessionRegistry;
     private final ProcessAdapter adapter;
-
     private final GenericConsumer genericConsumer;
 
-    public ChatWebSocketHandler(SessionRegistry sessionRegistry, ProcessAdapter adapter, GenericConsumer genericConsumer) {
+    public ChatWebSocketHandler(SessionRegistry sessionRegistry,
+                                ProcessAdapter adapter,
+                                GenericConsumer genericConsumer) {
         this.sessionRegistry = sessionRegistry;
         this.adapter = adapter;
         this.genericConsumer = genericConsumer;
@@ -31,6 +32,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         String userId = session.getHandshakeInfo().getUri().getQuery()
                 .replace("userId=", "");
 
+        // registra sessão e cria o Sink no registry
         sessionRegistry.registerSession(userId, session);
 
         var processChatQueueKey = new ProcessChatQueueKey(userId);
@@ -43,13 +45,29 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                 processRoutingKey
         );
 
-        return session.receive() //Recebe os dados do client e envia para o servidor de processamento
-                .doOnNext(msg -> {
-                    adapter.handleSendMessage(msg.getPayload());
-                })
-                .doFinally(signal -> sessionRegistry.unregisterSession(userId))
-                .then();
-    }
+        // Obtém o Flux<byte[]> do Sink do usuário
+        var sink = sessionRegistry.getSink(userId);
+        if (sink == null) {
+            // fallback seguro — registra um Sink caso não exista (defensivo)
+            sessionRegistry.registerSession(userId, session);
+        }
 
+        var outgoing = sessionRegistry.getSink(userId)
+                .asFlux()
+                // CORREÇÃO: não usar session::binaryMessage — usar lambda que cria o binary message
+                .map(bytes -> session.binaryMessage(factory -> factory.wrap(bytes)));
+
+        var incoming = session.receive()
+                .doOnNext(msg -> adapter.handleSendMessage(msg.getPayload()))
+                .then();
+
+        // Combina os dois fluxos corretamente e garante limpeza no finally
+        return Mono.when(
+                session.send(outgoing),
+                incoming
+        ).doFinally(signal -> {
+            sessionRegistry.unregisterSession(userId);
+        });
+    }
 
 }

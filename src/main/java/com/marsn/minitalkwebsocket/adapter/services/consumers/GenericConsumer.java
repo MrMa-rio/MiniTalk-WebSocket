@@ -23,6 +23,7 @@ public class GenericConsumer {
     private final RabbitAdmin rabbitAdmin;
     private final ConnectionFactory connectionFactory;
 
+
     private final DeliveryAdapter adapter;
 
     public GenericConsumer(RabbitAdmin rabbitAdmin, ConnectionFactory connectionFactory, DeliveryAdapter adapter) {
@@ -45,17 +46,14 @@ public class GenericConsumer {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         container.setQueueNames(queueName.toName());
-        container.setMessageListener(message -> {
-            handleReceivedMessage(queueName, message);
-        });
+        container.setMessageListener(this::handleReceivedMessage);
         container.start();
     }
 
-    private void handleReceivedMessage(QueueKey queueName, Message message) {
+    private void handleReceivedMessage(Message message) {
         try {
                 ChatMessage chatMsg = ChatMessage.parseFrom(message.getBody());
                 System.out.println("Mensagem de " + chatMsg.getSenderId() + " para " + chatMsg.getDestinyId());
-
                 adapter.handleMessageReceived(chatMsg);
         } catch (InvalidProtocolBufferException e) {
            adapter.handleMessageError(message);

@@ -1,12 +1,7 @@
 package com.marsn.minitalkwebsocket.adapter.services.chat.dispatch;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.socket.WebSocketMessage;
-import org.springframework.web.reactive.socket.WebSocketSession;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-import java.nio.ByteBuffer;
+import reactor.core.publisher.Sinks;
 
 @Service
 public class ConnectionService {
@@ -18,27 +13,20 @@ public class ConnectionService {
     }
 
     /**
-     * Método chamado quando o RabbitMQ envia uma mensagem para entrega.
+     * Envia mensagem reativamente para o usuário (caso conectado).
      */
     public void deliverMessageToUser(String userId, byte[] protobufMessage) {
-        WebSocketSession session = sessionRegistry.getSession(userId);
+        Sinks.Many<byte[]> sink = sessionRegistry.getSink(userId);
 
-        if (session == null) {
-            System.out.println("⚠️ Usuário não conectado a esta instância: " + userId);
+        if (sink == null) {
+            System.out.println("⚠️ Usuário " + userId + " não possui sessão ativa.");
             return;
         }
 
-        if (!session.isOpen()) {
-            System.out.println("❌ Sessão fechada para: " + userId);
-            sessionRegistry.unregisterSession(userId);
-            return;
+        Sinks.EmitResult result = sink.tryEmitNext(protobufMessage);
+
+        if (result.isFailure()) {
+            System.out.println("❌ Falha ao enviar mensagem para " + userId + ": " + result);
         }
-
-        // Cria mensagem binária
-        WebSocketMessage binaryMessage =
-                session.binaryMessage(factory -> factory.wrap(ByteBuffer.wrap(protobufMessage)));
-
-        // Envia de forma reativa
-        session.send(Mono.just(binaryMessage)).subscribe();
     }
 }

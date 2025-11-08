@@ -1,21 +1,22 @@
 package com.marsn.minitalkwebsocket.adapter.services.chat.process;
 
-import com.marsn.minitalkwebsocket.adapter.services.chat.dispatch.ConnectionService;
+import com.marsn.minitalkwebsocket.adapter.services.events.ChatMessageEvent;
 import com.marsn.minitalkwebsocket.v1.ChatMessage;
 import org.springframework.amqp.core.Message;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DeliveryAdapter {
 
-    private final ConnectionService connectionService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public DeliveryAdapter(ConnectionService connectionService) {
-        this.connectionService = connectionService;
+    public DeliveryAdapter(ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     public void handleMessageReceived(ChatMessage chatMsg) {
-        connectionService.deliverMessageToUser(chatMsg.getDestinyId(), chatMsg.toByteArray());
+        eventPublisher.publishEvent(new ChatMessageEvent(this, chatMsg.getDestinyId(), chatMsg.toByteArray()));
     }
 
     public void handleMessageError(Message message) {
