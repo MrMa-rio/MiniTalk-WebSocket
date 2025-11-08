@@ -1,132 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Cliente WebSocket Simples</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <meta charset="UTF-8" />
+    <title>Mock ChatMessage - Protobuf WebSocket</title>
+    <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.4/dist/protobuf.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            background-color: #101010;
+            color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
         }
-
-        #messages {
-            border: 1px solid #ccc;
+        h2 { color: #00ffc3; }
+        input, button {
+            margin: 5px;
+            padding: 8px;
+            border-radius: 6px;
+            border: none;
+        }
+        button {
+            background-color: #00b7ff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0088cc;
+        }
+        #chatBox {
+            width: 100%;
+            height: 300px;
+            overflow-y: auto;
+            background: #1a1a1a;
             padding: 10px;
-            height: 200px;
-            overflow-y: scroll;
-            margin-bottom: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 14px;
         }
-
-        .message {
-            margin-bottom: 5px;
+        .msg {
+            margin: 5px 0;
+            padding: 6px 10px;
+            border-radius: 6px;
+            word-wrap: break-word;
+        }
+        .msg.in {
+            background-color: #2d2d2d;
+            color: #00ffae;
+        }
+        .msg.out {
+            background-color: #004d66;
+            color: #ffffff;
+            text-align: right;
+        }
+        #log {
+            background: #111;
+            color: #ccc;
+            padding: 8px;
+            border-radius: 6px;
+            height: 150px;
+            overflow-y: auto;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
+<h2>Mock ChatMessage via WebSocket (Protobuf)</h2>
 
-<h1>Cliente WebSocket Simples (STOMP)</h1>
+<div>
+    <input type="text" id="remetente" placeholder="Usuário remetente">
+    <input type="text" id="destinatario" placeholder="Usuário destino">
+    <button id="connect">Conectar</button>
+    <button id="send">Enviar Mock</button>
+</div>
 
-<div id="messages"></div>
+<div id="chatBox"></div>
 
-<input type="text" id="messageInput" placeholder="Digite sua mensagem...">
-<input type="text" id="messageIdInput" placeholder="Digite o id da mensagem">
-<input type="text" id="senderId" placeholder="usuario remetente">
-<input type="text" id="destinyId" placeholder="usuario destino">
-<input type="text" id="data-hora" placeholder="hora">
-<button onclick="sendMessage()">Enviar</button>
-<button onclick="connect()">Conectar</button>
-<button onclick="disconnect()">Desconectar</button>
-
-<input type="text" id="conversationId" placeholder="id da conversa">
-<button onclick="connectInConversation()">Conectar no chat</button>
+<h3>Logs</h3>
+<pre id="log"></pre>
 
 <script>
-    var stompClient = null;
+    const log = (msg) => {
+        const el = document.getElementById('log');
+        el.textContent += msg + "\n";
+        el.scrollTop = el.scrollHeight;
+    };
 
-    function connect() {
-        var socket = new SockJS('/ws-chat');
-        stompClient = Stomp.over(socket);
-        stompClient.connect({}, function (frame) {
-            console.log('Conectado: ' + frame);
-            showMessage("Conectado ao servidor.");
+    const addChatMsg = (content, type) => {
+        const box = document.getElementById('chatBox');
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.textContent = content;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    };
 
-            // Assinar o tópico para receber mensagens do servidor
-            stompClient.subscribe('/topic/messages', function (message) {
-                showMessage(message.body);
-            });
-        }, function (error) {
-            showMessage("Erro de conexão: " + error);
-            console.error("Erro de conexão:", error);
-        });
-    }
+    let ws;
+    let ChatMessage;
 
-    function connectInConversation() {
+    // 1️⃣ Carrega o schema protobuf
+    protobuf.load("/proto/chat_message.proto").then(root => {
+        ChatMessage = root.lookupType("ChatMessage");
+        log("✅ Proto carregado com sucesso!");
+    });
 
-
-        var messageId = document.getElementById('conversationId').value;
-        var senderId = document.getElementById('senderId').value;
-
-        if (stompClient && stompClient.connected) {
-            // Enviar mensagem para o endpoint /app/message
-            stompClient.send("/app/enter-chat", {},
-                JSON.stringify({
-                    conversationId: messageId,
-                    senderId: senderId,
-                })
-            );
-        } else {
-            showMessage("Erro: Não conectado. Clique em 'Conectar'.");
+    // 2️⃣ Conectar WebSocket
+    document.getElementById('connect').onclick = () => {
+        const senderId = document.getElementById('remetente').value;
+        if (!senderId) {
+            alert("Informe o remetente antes de conectar!");
+            return;
         }
-    }
 
-    function disconnect() {
-        if (stompClient !== null) {
-            stompClient.disconnect();
+        ws = new WebSocket("ws://localhost:8084/ws-chat?userId=" + senderId);
+        ws.binaryType = "arraybuffer";
+
+        ws.onopen = () => log("🔗 Conectado ao servidor WebSocket!");
+        ws.onmessage = (event) => {
+            if (event.data instanceof ArrayBuffer) {
+                const bytes = new Uint8Array(event.data);
+                const msg = ChatMessage.decode(bytes);
+                addChatMsg(`💬 ${msg.senderId}: ${msg.content}`, "in");
+                log("📩 Mensagem recebida: " + JSON.stringify(msg, null, 2));
+            } else {
+                log("📄 Texto recebido: " + event.data);
+            }
+        };
+        ws.onclose = () => log("❌ Conexão encerrada");
+    };
+
+    // 3️⃣ Enviar mock de mensagem
+    document.getElementById('send').onclick = () => {
+        const senderId = document.getElementById('remetente').value;
+        const destinyId = document.getElementById('destinatario').value;
+
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            log("⚠️ WebSocket não está conectado.");
+            return;
         }
-        showMessage("Desconectado.");
-        console.log("Desconectado");
-    }
 
-    function sendMessage() {
-        var message = document.getElementById('messageInput').value;
-        var messageId = document.getElementById('messageIdInput').value;
-        var senderId = document.getElementById('senderId').value;
-        var dataHora = document.getElementById('data-hora').value;
-        var destinyId = document.getElementById('destinyId').value;
-
-        if (stompClient && stompClient.connected) {
-            // Enviar mensagem para o endpoint /app/message
-            stompClient.send("/app/message", {},
-                JSON.stringify({
-                    messageId: messageId,
-                    conversationId: messageId,
-                    senderId: senderId,
-                    content: message,
-                    timestamp: dataHora,
-                    destinyId: destinyId
-
-                })
-            );
-            showMessage("Voce: " + message);
-            document.getElementById('messageInput').value = ''; // Limpar input
-        } else {
-            showMessage("Erro: Não conectado. Clique em 'Conectar'.");
+        if (!ChatMessage) {
+            log("⚠️ Proto ainda não carregado.");
+            return;
         }
-    }
 
-    function showMessage(message) {
-        var messagesDiv = document.getElementById('messages');
-        var messageElement = document.createElement('div');
-        messageElement.className = 'message';
-        messageElement.textContent = message;
-        messagesDiv.appendChild(messageElement);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll para o final
-    }
+        const mockMessage = {
+            messageId: crypto.randomUUID(),
+            conversationId: "conv-001",
+            senderId,
+            content: "Mensagem de teste enviada às " + new Date().toLocaleTimeString(),
+            timestamp: new Date().toISOString(),
+            destinyId
+        };
 
-    // Conectar automaticamente ao carregar a página
-    window.onload = connect;
+        const err = ChatMessage.verify(mockMessage);
+        if (err) {
+            log("Erro na mensagem: " + err);
+            return;
+        }
+
+        const messageBuffer = ChatMessage.encode(ChatMessage.create(mockMessage)).finish();
+        ws.send(messageBuffer);
+
+        addChatMsg(`📤 Você: ${mockMessage.content}`, "out");
+        log("📤 Mensagem enviada (bytes): " + messageBuffer.length + " bytes");
+    };
 </script>
-
 </body>
 </html>

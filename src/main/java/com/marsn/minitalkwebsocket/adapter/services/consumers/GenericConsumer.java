@@ -2,11 +2,13 @@ package com.marsn.minitalkwebsocket.adapter.services.consumers;
 
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.marsn.minitalkwebsocket.adapter.services.chat.process.DeliveryAdapter;
 import com.marsn.minitalkwebsocket.core.model.rabbit.ExchangeKey;
 import com.marsn.minitalkwebsocket.core.model.rabbit.QueueKey;
 import com.marsn.minitalkwebsocket.core.model.rabbit.RoutingKey;
 import com.marsn.minitalkwebsocket.v1.ChatMessage;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -14,47 +16,49 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
+
 @Service
-public class ProcessConsumer {
+public class GenericConsumer {
 
     private final RabbitAdmin rabbitAdmin;
     private final ConnectionFactory connectionFactory;
 
-    public ProcessConsumer(RabbitAdmin rabbitAdmin, ConnectionFactory connectionFactory) {
+    private final DeliveryAdapter adapter;
+
+    public GenericConsumer(RabbitAdmin rabbitAdmin, ConnectionFactory connectionFactory, DeliveryAdapter adapter) {
         this.rabbitAdmin = rabbitAdmin;
         this.connectionFactory = connectionFactory;
+        this.adapter = adapter;
     }
 
-    /**
-     * Cria dinamicamente uma fila temporária e faz o bind na conversa desejada.
-     */
-    public void subscribeToQueue(QueueKey queueName, ExchangeKey exchangeKey, RoutingKey routingKey) {
-
-        // Cria fila se não existir
+    public void subscribeToDynamicQueue(QueueKey queueName, ExchangeKey exchangeKey, RoutingKey routingKey) {
         Queue queue = new Queue(queueName.toName(), false, true, true);
         TopicExchange exchange = new TopicExchange(exchangeKey.toName());
         rabbitAdmin.declareQueue(queue);
-
-        // Faz o bind da fila à routing key específica
         rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(routingKey.toRoute()));
+
+        startListener(queueName);
+
     }
 
-    public void startListener(QueueKey queueName) {
+    private void startListener(QueueKey queueName) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         container.setQueueNames(queueName.toName());
         container.setMessageListener(message -> {
-            try {
-                ChatMessage chatMsg = ChatMessage.parseFrom(message.getBody());
-                System.out.println(queueName);
-                System.out.printf("📩 [%s] Nova mensagem em %s: %s%n",
-                        chatMsg.getSenderId(), chatMsg.getConversationId(), chatMsg.getContent());
-
-//                sendMessage(chatMsg.getContent());
-            } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-            }
+            handleReceivedMessage(queueName, message);
         });
         container.start();
+    }
+
+    private void handleReceivedMessage(QueueKey queueName, Message message) {
+        try {
+                ChatMessage chatMsg = ChatMessage.parseFrom(message.getBody());
+                System.out.println("Mensagem de " + chatMsg.getSenderId() + " para " + chatMsg.getDestinyId());
+
+                adapter.handleMessageReceived(chatMsg);
+        } catch (InvalidProtocolBufferException e) {
+           adapter.handleMessageError(message);
+        }
     }
 }

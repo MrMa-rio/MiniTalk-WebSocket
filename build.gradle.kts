@@ -33,6 +33,7 @@ dependencies {
     implementation("io.grpc:grpc-services")
     implementation("org.springframework.amqp:spring-rabbit-stream")
     implementation("org.springframework.grpc:spring-grpc-spring-boot-starter")
+    implementation("org.projectlombok:lombok:1.18.28")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.springframework.grpc:spring-grpc-test")
