@@ -32,7 +32,6 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         String userId = session.getHandshakeInfo().getUri().getQuery()
                 .replace("userId=", "");
 
-        // registra sessão e cria o Sink no registry
         sessionRegistry.registerSession(userId, session);
 
         var processChatQueueKey = new ProcessChatQueueKey(userId);
@@ -45,23 +44,19 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                 processRoutingKey
         );
 
-        // Obtém o Flux<byte[]> do Sink do usuário
         var sink = sessionRegistry.getSink(userId);
         if (sink == null) {
-            // fallback seguro — registra um Sink caso não exista (defensivo)
             sessionRegistry.registerSession(userId, session);
         }
 
         var outgoing = sessionRegistry.getSink(userId)
                 .asFlux()
-                // CORREÇÃO: não usar session::binaryMessage — usar lambda que cria o binary message
                 .map(bytes -> session.binaryMessage(factory -> factory.wrap(bytes)));
 
         var incoming = session.receive()
                 .doOnNext(msg -> adapter.handleSendMessage(msg.getPayload()))
                 .then();
 
-        // Combina os dois fluxos corretamente e garante limpeza no finally
         return Mono.when(
                 session.send(outgoing),
                 incoming
