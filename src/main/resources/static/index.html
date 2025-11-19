@@ -122,7 +122,7 @@
             return;
         }
 
-        ws = new WebSocket("ws://localhost:8084/ws-chat?userId=" + senderId);
+        ws = new WebSocket("ws://172.16.232.241:8084/ws-chat?userId=" + senderId);
         ws.binaryType = "arraybuffer";
 
         ws.onopen = () => log("🔗 Conectado ao servidor WebSocket!");
@@ -155,11 +155,11 @@
         }
 
         const mockMessage = {
-            messageId: crypto.randomUUID(),
-            conversationId: "conv-001",
+            messageId: "teste",
+            conversationId: 100,
             senderId,
             content: "Mensagem de teste enviada às " + new Date().toLocaleTimeString(),
-            timestamp: new Date().toISOString(),
+            timestamp: 45678454,
             destinyId
         };
 
