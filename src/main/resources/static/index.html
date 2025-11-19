@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8"/>
     <title>Mock ChatMessage - Protobuf WebSocket</title>
     <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.4/dist/protobuf.min.js"></script>
     <style>
@@ -12,21 +12,28 @@
             margin: 0;
             padding: 20px;
         }
-        h2 { color: #00ffc3; }
+
+        h2 {
+            color: #00ffc3;
+        }
+
         input, button {
             margin: 5px;
             padding: 8px;
             border-radius: 6px;
             border: none;
         }
+
         button {
             background-color: #00b7ff;
             color: white;
             cursor: pointer;
         }
+
         button:hover {
             background-color: #0088cc;
         }
+
         #chatBox {
             width: 100%;
             height: 300px;
@@ -37,21 +44,25 @@
             margin-top: 10px;
             font-size: 14px;
         }
+
         .msg {
             margin: 5px 0;
             padding: 6px 10px;
             border-radius: 6px;
             word-wrap: break-word;
         }
+
         .msg.in {
             background-color: #2d2d2d;
             color: #00ffae;
         }
+
         .msg.out {
             background-color: #004d66;
             color: #ffffff;
             text-align: right;
         }
+
         #log {
             background: #111;
             color: #ccc;
@@ -130,8 +141,8 @@
 
     // 3️⃣ Enviar mock de mensagem
     document.getElementById('send').onclick = () => {
-        const senderId = document.getElementById('remetente').value;
-        const destinyId = document.getElementById('destinatario').value;
+        const senderId = Number(document.getElementById('remetente').value);
+        const destinyId = Number(document.getElementById('destinatario').value);
 
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             log("⚠️ WebSocket não está conectado.");

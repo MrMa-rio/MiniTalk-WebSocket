@@ -16,7 +16,7 @@ public class DeliveryAdapter {
     }
 
     public void handleMessageReceived(ChatMessage chatMsg) {
-        eventPublisher.publishEvent(new ChatMessageEvent(this, chatMsg.getDestinyId(), chatMsg.toByteArray()));
+        eventPublisher.publishEvent(new ChatMessageEvent(this, String.valueOf(chatMsg.getDestinyId()), chatMsg.toByteArray()));
     }
 
     public void handleMessageError(Message message) {
